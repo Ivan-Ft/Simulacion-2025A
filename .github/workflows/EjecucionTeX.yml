@@ -20,7 +20,7 @@ jobs:
       - name: "Compilación del Informe"
         uses: xu-cheng/latex-action@master
         with: 
-          root_file: Informes/Informe01.tex
+          root_file: Informes Prueba/Informe01.tex
 
       - name: "Revisión del PDF"
         run: |
