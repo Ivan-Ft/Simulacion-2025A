@@ -1,3 +1,6 @@
+\documentclass[12pt, a4paper]{book}
+\usepackage{amsmath, float}
+
 \title{Primer informe dinámico}
 \author{Diego Huaraca}
 \date{\today}
@@ -22,10 +25,19 @@ Azuay & Cuenca\\ \hline
 
 Otro párrafo de prueba.
 
-<<chunk01>>=
-3+5-2
+<<chunk01, background = '#f1fdf1'>>=
+3 + 5 - 2
 rnorm(5, mean = 12, sd = 4)
 @
+
+A continuación nuestro segundo chunk
+<<chunk02, echo = FALSE>>=
+plot(sort(runif(10, min = 0, max = 10)), sort(rnorm(10, mean=10, sd=3)), 
+     ylab = "Ventas", type = "l", col = 3, xlab = "Día")
+@
+
+
+
 
 \end{document}
 
