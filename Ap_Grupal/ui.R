@@ -138,6 +138,6 @@ fluidPage(
     )
   ),
   hr(),
-  div("Autor: Ivan Fuertes", style = "text-align: center; font-size: 13px; color: #666;")
+  div("Autores: Ivan Fuertes, Yajaira Toaquiza, Kevin Apolo", style = "text-align: center; font-size: 13px; color: #666;")
 )
 
