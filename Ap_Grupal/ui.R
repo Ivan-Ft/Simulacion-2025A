@@ -100,26 +100,38 @@ fluidPage(
     tabPanel("Distribuciones discretas",
              sidebarLayout(
                sidebarPanel(
-                 radioButtons("distribucion", "Distribución:",
+                 radioButtons("distribucion", "Seleccione distribución:",
                               c("Binomial", "Poisson")),
                  actionButton("siguiente", "Seleccionar", class = "btn-primary"),
                  
-                 # Panel condicional para parámetros
+                 # Panel de parámetros
                  uiOutput("parametrosUI")
                ),
                mainPanel(
                  # Resultados para Binomial
                  conditionalPanel(
-                   condition = "input.distribucion == 'Binomial' & input.siguiente > 0",
+                   condition = "input.distribucion == 'Binomial' & input.siguiente > 0 & input.calc_bin > 0",
+                   h4("Resultados - Distribución Binomial"),
                    plotOutput("histBin"),
                    verbatimTextOutput("statsBin")
                  ),
                  
-                 # Resultados para Poisson
+                 # Resultados para Poisson (CORREGIDO)
                  conditionalPanel(
-                   condition = "input.distribucion == 'Poisson' & input.siguiente > 0",
+                   condition = "input.distribucion == 'Poisson' & input.siguiente > 0 & input.calc_pois > 0",
+                   h4("Resultados - Distribución Poisson"),
                    plotOutput("histPois"),
                    verbatimTextOutput("statsPois")
+                 ),
+                 
+                 # Mensaje cuando no hay resultados
+                 conditionalPanel(
+                   condition = "(input.distribucion == 'Poisson' & input.siguiente > 0 & input.calc_pois == 0) | 
+                           (input.distribucion == 'Binomial' & input.siguiente > 0 & input.calc_bin == 0)",
+                   wellPanel(
+                     h4("Instrucciones:"),
+                     p("Por favor ingrese los parámetros y presione 'Calcular' para ver los resultados")
+                   )
                  )
                )
              )
@@ -128,3 +140,4 @@ fluidPage(
   hr(),
   div("Autor: Ivan Fuertes", style = "text-align: center; font-size: 13px; color: #666;")
 )
+

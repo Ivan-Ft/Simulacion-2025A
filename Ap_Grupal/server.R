@@ -66,21 +66,18 @@ fun_binomial<- function(n,p){
   }
 }
 #Poisson
-fun_poisson <- function(lambda){
-  U<-runif(1)
-  pk<- exp(-lambda)
-  k<-0
-  Fk<-0
-  repeat{
-    FK<- Fk+pk
-    if(U<Fk){
-      return(k)
-      break
-    }
-    k<-k+1
-    pk<-(lambda/k)*pk
-    
+fun_poisson <- function(lambda) {
+  U <- runif(1)
+  k <- 0
+  L <- exp(-lambda)
+  p <- L
+  
+  while(U > p) {
+    k <- k + 1
+    L <- L * lambda / k
+    p <- p + L
   }
+  return(k)
 }
 
 # Define server logic required to draw a histogram
@@ -290,65 +287,81 @@ function(input, output, session) {
   })
   
   #Pestaña Variables Discretas
-  # Reactive values para almacenar simulaciones
-  simulaciones <- reactiveValues(bin = NULL, pois = NULL)
+  # Pestaña Variables Discretas - Versión corregida
   
-  # Observador para Binomial
-  observeEvent(input$calc_bin, {
-    req(input$n_bin, input$p_bin, input$num_bin)
-    simulaciones$bin <- replicate(input$num_bin, fun_binomial(input$n_bin, input$p_bin))
+  # Variable para controlar el estado de la distribución seleccionada
+  dist_seleccionada <- reactiveVal(NULL)
+  parametros_mostrados <- reactiveVal(FALSE)
+  
+  # Observador para el botón "Seleccionar"
+  observeEvent(input$siguiente, {
+    dist_seleccionada(input$distribucion)
+    parametros_mostrados(TRUE)
   })
   
-  # Observador para Poisson
-  observeEvent(input$calc_pois, {
-    req(input$lambda, input$num_pois)
-    simulaciones$pois <- replicate(input$num_pois, fun_poisson(input$lambda))
-  })
-  
-  # UI Dinámica para parámetros
+  # UI Dinámica para parámetros (solo se muestra después de presionar "Seleccionar")
   output$parametrosUI <- renderUI({
-    req(input$distribucion, input$siguiente > 0)
+    req(dist_seleccionada(), parametros_mostrados())
     
-    if(input$distribucion == "Binomial") {
+    if(dist_seleccionada() == "Binomial") {
       tagList(
-        numericInput("n_bin", "n (ensayos):", 10, min = 1),
-        numericInput("p_bin", "p (éxito):", 0.5, min = 0, max = 1, step = 0.01),
-        numericInput("num_bin", "Nº simulaciones:", 1000, min = 100),
+        numericInput("n_bin", "Número de ensayos (n):", value = 10, min = 1),
+        numericInput("p_bin", "Probabilidad de éxito (p):", value = 0.5, min = 0, max = 1, step = 0.01),
+        numericInput("num_bin", "Número de simulaciones:", value = 1000, min = 100),
         actionButton("calc_bin", "Calcular", class = "btn-success")
       )
-    } else {
+    } else if(dist_seleccionada() == "Poisson") {
       tagList(
-        numericInput("lambda", "λ (lambda):", 4, min = 0.1, step = 0.1),
-        numericInput("num_pois", "Nº simulaciones:", 1000, min = 100),
+        numericInput("lambda", "Valor de lambda (λ):", value = 4, min = 0.1, step = 0.1),
+        numericInput("num_pois", "Número de simulaciones:", value = 1000, min = 100),
         actionButton("calc_pois", "Calcular", class = "btn-success")
       )
     }
   })
   
-  # Outputs para Binomial
+  # Lógica para Binomial
+  sim_bin <- eventReactive(input$calc_bin, {
+    req(input$n_bin, input$p_bin, input$num_bin)
+    replicate(input$num_bin, fun_binomial(input$n_bin, input$p_bin))
+  })
+  
   output$histBin <- renderPlot({
-    req(simulaciones$bin)
-    hist(simulaciones$bin, breaks = 30, col = "#1E90FF", 
-         main = "Distribución Binomial", xlab = "Valores")
+    req(sim_bin())
+    hist(sim_bin(), breaks = 30, col = "#1E90FF", 
+         main = "Distribución Binomial Simulada",
+         xlab = "Valores", ylab = "Frecuencia")
   })
   
   output$statsBin <- renderPrint({
-    req(simulaciones$bin)
-    cat("Media:", mean(simulaciones$bin), "\n")
-    cat("Varianza:", var(simulaciones$bin))
+    req(sim_bin())
+    x <- sim_bin()
+    cat("Media:", mean(x), "\nVarianza:", var(x))
   })
   
-  # Outputs para Poisson
-  output$histPois <- renderPlot({
-    req(simulaciones$pois)
-    hist(simulaciones$pois, breaks = 30, col = "#FF6347", 
-         main = "Distribución Poisson", xlab = "Valores")
+  # Lógica para Poisson (VERSIÓN CORREGIDA)
+  observeEvent(input$calc_pois, {
+    req(input$lambda, input$num_pois)
+    # Forzamos la actualización de los resultados
+    output$histPois <- renderPlot({
+      x <- replicate(input$num_pois, fun_poisson(input$lambda))
+      hist(x, breaks = 30, col = "#FF6347", 
+           main = "Distribución Poisson Simulada",
+           xlab = "Valores", ylab = "Frecuencia")
+    })
+    
+    output$statsPois <- renderPrint({
+      x <- replicate(input$num_pois, fun_poisson(input$lambda))
+      cat("Media:", mean(x), "\nVarianza:", var(x))
+    })
   })
   
-  output$statsPois <- renderPrint({
-    req(simulaciones$pois)
-    cat("Media:", mean(simulaciones$pois), "\n")
-    cat("Varianza:", var(simulaciones$pois))
+  # Observador para resetear cuando cambia la distribución seleccionada
+  observeEvent(input$distribucion, {
+    if(!is.null(dist_seleccionada())) {
+      if(input$distribucion != dist_seleccionada()) {
+        parametros_mostrados(FALSE)
+      }
+    }
   })
   
   
